@@ -1,61 +1,64 @@
 # Build and publication operations
 
-This checkout contains the Flatpak manifests and tooling used to build and
-publish packages. Git updates change the packaging sources; building, testing,
-and publishing are separate steps.
+This checkout contains package recipes and a Python CLI for preparing, reviewing,
+and publishing Flatpaks. Git changes do not automatically build or publish apps.
 
-The tooling currently supports local test repositories. Public deployment has
-not been verified, and the publish script is not ready for use against a live
-repository.
+The publish command supports local test repositories. Public deployment and
+atomic publication are not yet implemented.
 
-## Build
+## Setup
 
-Use a trusted x86_64 Linux build machine with `flatpak`, `flatpak-builder`,
-`ostree`, `elfutils`, GnuPG, and `flock`. Flatpak's sandbox and user namespaces must work
-on the build machine. Keep signing keys separate from the build environment.
-
-Configure Flathub as a user remote for the SDK and runtime dependencies:
+Use Python 3.11 or newer with `uv`, Flatpak, Flatpak Builder, OSTree, `elfutils`,
+and GnuPG. The build host must support Flatpak's sandbox and user namespaces.
+Keep the signing key separate from the build environment.
 
 ```sh
+uv sync
 flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 ```
 
-Build an application from the checkout:
+Run the regression suite with `uv run pytest`.
+
+## Prepare
+
+Each `apps/*/recipe.toml` defines an application ID, branch, architecture, and
+source. Manifest recipes build with Flatpak Builder; bundle recipes download and
+verify the pinned upstream release before importing it. Recipes and manifests
+remain in this checkout, while candidates are stored under `.work/candidates/`.
 
 ```sh
-./scripts/build io.github.wyze3306.BedrockOnLinux
+uv run flatpak-packages prepare io.github.wyze3306.BedrockOnLinux
+uv run flatpak-packages prepare rocks.spotifast.Spotifast
 ```
 
-The script prints the candidate repository path. Review the upstream sources,
-license terms, changes, and sandbox permissions, then test the candidate on an
-isolated client before signing it. Builds use two jobs by default; set `JOBS`
-to change this.
+The command prints the candidate path and records its refs, recipe digest, Git
+revision, and whether the recipe tree was dirty. Review the source, license,
+permissions, and candidate record; test installation and launch before signing.
+Use `--jobs` to set manifest build concurrency (default: 2).
 
 ## Sign and publish
 
-Use a dedicated GPG signing key and keep its private material outside Git, the
-public web root, and the build environment. Back up the key securely and
-verify its fingerprint independently.
+Use a dedicated GPG key and keep its private material outside Git, the web root,
+and the build environment. Back up the key and verify its fingerprint.
 
-Initialize a new archive-mode OSTree repository on the signing machine:
-
-```sh
-ostree --repo=/absolute/path/to/destination/repo init --mode=archive
-```
-
-Publish a reviewed candidate using the signing key's fingerprint:
+Initialize a new archive-mode local test repository:
 
 ```sh
-./scripts/publish /absolute/path/to/candidate/repo /absolute/path/to/destination/repo FINGERPRINT
+ostree --repo=/absolute/path/to/test/repo init --mode=archive
 ```
 
-The script signs the application and runtime refs and updates the repository's
-summary and AppStream metadata. The candidate, destination, and signing key must
-be available on the same machine.
+Publish the reviewed candidate using its path and the signing key fingerprint:
 
-Public hosting still requires a `.flatpakrepo` file containing the HTTPS URL
-and public key, a web server without browser authentication challenges, and a
-successful client install and update test. Production deployment and atomic
-publication are not yet implemented.
+```sh
+uv run flatpak-packages publish APP_ID /absolute/path/to/candidate /absolute/path/to/test/repo FINGERPRINT
+```
+
+The command checks the current recipe and candidate refs against the recorded
+values, signs the selected commits, and updates AppStream and summary metadata.
+The candidate and key must be available on the publishing machine. Publishing
+modifies the destination in place; do not use it on a live repository.
+
+A public release still requires a `.flatpakrepo` with the public key, HTTPS
+hosting without browser challenges, and client install and update verification.
 
 Reference: <https://docs.flatpak.org/en/latest/hosting-a-repository.html>

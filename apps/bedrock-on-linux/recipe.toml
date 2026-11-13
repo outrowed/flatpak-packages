@@ -1,0 +1,8 @@
+id = "io.github.wyze3306.BedrockOnLinux"
+branch = "stable"
+architecture = "x86_64"
+related_refs = ["runtime/io.github.wyze3306.BedrockOnLinux.Debug/x86_64/stable"]
+
+[source]
+type = "manifest"
+path = "io.github.wyze3306.BedrockOnLinux.yml"

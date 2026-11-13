@@ -1,0 +1,8 @@
+id = "rocks.spotifast.Spotifast"
+branch = "master"
+architecture = "x86_64"
+
+[source]
+type = "bundle"
+url = "https://github.com/crmne/spotifast/releases/download/v0.17.0/spotifast-v0.17.0-x86_64.flatpak"
+sha256 = "30537c5105dfc3145294f61b9d88a9bf09d58addec3ba1b490087e7c35c44cfd"

@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=66"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flatpak-packages"
+version = "0.1.0"
+description = "Prepare and publish Flatpak packages from in-repository recipes"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+flatpak-packages = "flatpak_packages.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]
