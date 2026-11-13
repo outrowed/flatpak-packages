@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  printf 'Usage: %s APP_ID\nBuild an app into .work/candidates/APP_ID, without signing or publishing.\n' "$0"
+}
+[[ ${1:-} != --help && ${1:-} != -h ]] || { usage; exit 0; }
+[[ $# == 1 ]] || { usage >&2; exit 2; }
+app_id=$1
+[[ $app_id =~ ^[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)+$ ]] || { echo 'Invalid application ID' >&2; exit 2; }
+root=$(cd -- "$(dirname -- "$0")/.." && pwd -P)
+command -v flatpak-builder >/dev/null || { echo 'flatpak-builder is required' >&2; exit 1; }
+command -v flatpak >/dev/null || { echo 'flatpak is required' >&2; exit 1; }
+
+shopt -s nullglob
+manifests=("$root"/apps/*/"$app_id".yml "$root"/apps/*/"$app_id".yaml "$root"/apps/*/"$app_id".json)
+[[ ${#manifests[@]} == 1 ]] || { printf 'Expected one manifest for %s; found %s\n' "$app_id" "${#manifests[@]}" >&2; exit 1; }
+# Separate candidates prevent an old successful build being mistaken for a new one.
+mkdir -p "$root/.work/candidates" "$root/.work/state"
+candidate=$(mktemp -d "$root/.work/candidates/$app_id.XXXXXXXX")
+printf 'Candidate: %s\n' "$candidate"
+flatpak-builder --sandbox --disable-rofiles-fuse --user --install-deps-from=flathub \
+  --default-branch=stable --arch=x86_64 --jobs="${JOBS:-2}" \
+  --state-dir="$root/.work/state/$app_id" --repo="$candidate/repo" \
+  "$candidate/build" "${manifests[0]}"
+printf '\nBuild succeeded. Inspect and test candidate before publishing: %s/repo\n' "$candidate"

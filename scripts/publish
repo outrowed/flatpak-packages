@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+usage() {
+  cat <<'USAGE'
+Usage: publish CANDIDATE_REPO DESTINATION_REPO GPG_KEY_ID
+
+Import and sign all app/runtime refs from a reviewed candidate, then regenerate
+signed summary and AppStream metadata. Destination must already be an initialized
+archive-mode OSTree repository. This modifies the destination in place.
+USAGE
+}
+[[ ${1:-} != --help && ${1:-} != -h ]] || { usage; exit 0; }
+[[ $# == 3 ]] || { usage >&2; exit 2; }
+source_repo=$1 destination=$2 key=$3
+[[ -f $source_repo/config && -f $destination/config ]] || { echo 'Both paths must be existing OSTree repositories' >&2; exit 1; }
+[[ -n $key && $key != -* ]] || { echo 'A signing key ID is required' >&2; exit 2; }
+for tool in flatpak ostree flock; do command -v "$tool" >/dev/null || { echo "$tool is required" >&2; exit 1; }; done
+source_repo=$(cd -- "$source_repo" && pwd -P)
+destination=$(cd -- "$destination" && pwd -P)
+[[ $source_repo != "$destination" ]] || { echo 'Candidate and destination must differ' >&2; exit 1; }
+mode=$(ostree --repo="$destination" config get core.mode)
+[[ $mode == archive || $mode == archive-z2 ]] || { echo 'Destination must be an archive-mode repository' >&2; exit 1; }
+refs=$(ostree --repo="$source_repo" refs)
+mapfile -t refs < <(printf '%s\n' "$refs" | grep -E '^(app|runtime)/[^/]+/[^/]+/[^/]+$' || true)
+[[ ${#refs[@]} -gt 0 ]] || { echo 'Candidate contains no application or runtime refs' >&2; exit 1; }
+exec 9>"$destination/.publish.lock"
+flock -n 9 || { echo 'Another publish is in progress' >&2; exit 1; }
+printf 'Publishing %s ref(s) into %s:\n' "${#refs[@]}" "$destination"
+printf '  %s\n' "${refs[@]}"
+for ref in "${refs[@]}"; do
+  flatpak build-commit-from --untrusted --no-update-summary --gpg-sign="$key" \
+    --src-repo="$source_repo" "$destination" "$ref"
+done
+flatpak build-update-repo --title='Taruna Flatpak Packages' \
+  --default-branch=stable --gpg-sign="$key" "$destination"
+printf 'Repository updated. Verify it with an independent Flatpak client.\n'

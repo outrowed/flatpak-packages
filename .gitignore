@@ -1,0 +1,5 @@
+# Local build products, caches and generated repository data
+/.work/
+/.flatpak-builder/
+*.flatpak
+*.flatpakrepo
