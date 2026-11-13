@@ -41,4 +41,4 @@ See [Build and publication operations](docs/operations.md) for the candidate rev
 
 The long-term goal is to serve the curated collection as a Flatpak remote, so clients can install and update these apps using normal Flatpak commands. The repo does not mirror Flathub; shared runtimes are currently obtained from Flathub during builds.
 
-Each upstream package has its own license and redistribution terms. Review the package-specific upstream notes before distributing a build.
+The original Python tooling and recipe files authored by Taruna Prasetya are licensed under the MIT License; see [LICENSE](LICENSE) and [LICENSE.MIT](LICENSE.MIT). Each upstream application, manifest, and bundle retains its own license and redistribution terms. Review the package-specific upstream notes before distributing a build.

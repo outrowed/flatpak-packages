@@ -1,0 +1,7 @@
+# License
+
+Copyright (c) 2026 Taruna Prasetya
+
+The original Python tooling and original Flatpak recipe files authored by Taruna Prasetya in this repository are licensed under the MIT License. The full license text is included in [LICENSE.MIT](LICENSE.MIT), which is part of this license notice.
+
+This license does not apply to third-party applications, upstream-provided manifests or source code, application bundles, or other files carrying separate copyright or license notices. Those materials remain under their respective terms. Consult the license and provenance files in each app directory before using or redistributing app-specific materials.
