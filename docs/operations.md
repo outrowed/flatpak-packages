@@ -58,7 +58,13 @@ values, signs the selected commits, and updates AppStream and summary metadata.
 The candidate and key must be available on the publishing machine. Publishing
 modifies the destination in place; do not use it on a live repository.
 
-A public release still requires a `.flatpakrepo` with the public key, HTTPS
-hosting without browser challenges, and client install and update verification.
+Public hosting is active at `https://flatpak.taruna.me/`. Clients can configure
+the repository using its descriptor:
+
+```sh
+flatpak remote-add --user --if-not-exists outrowed-packages https://flatpak.taruna.me/flatpak-packages.flatpakrepo
+```
+
+Public installs and updates have been verified over HTTPS with the `outrowed` GPG key.
 
 Reference: <https://docs.flatpak.org/en/latest/hosting-a-repository.html>
